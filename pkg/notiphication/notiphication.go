@@ -28,6 +28,9 @@ func (n Notiphication) validate() error {
 	if n.Reply != "" && len(n.Actions) != 0 {
 		return fmt.Errorf("Can not specify both Reply and Actions")
 	}
+	if n.DropdownLabel != "" && len(n.Actions) == 0 {
+		return fmt.Errorf("Can not specify DropdownLabel is no Actions are specified")
+	}
 	return nil
 }
 
@@ -46,6 +49,13 @@ func (n Notiphication) buildCommand() []string {
 }
 
 func (n Notiphication) send(c chan executionResult) executionResult {
+	if err := n.validate(); err != nil {
+		select {
+		case c <- executionResult{"", err}:
+		default:
+			return executionResult{"", err}
+		}
+	}
 	command := n.buildCommand()
 	cmd := exec.Command("alerter", command...)
 	response, err := cmd.Output()
@@ -88,9 +98,6 @@ func (n Notiphication) send(c chan executionResult) executionResult {
 }
 
 func (n Notiphication) SyncPush() (string, error) {
-	if err := n.validate(); err != nil {
-		return "", err
-	}
 	c := make(chan executionResult)
 	res := n.send(c)
 	return res.RetVal, res.Err
@@ -98,9 +105,6 @@ func (n Notiphication) SyncPush() (string, error) {
 }
 
 func (n Notiphication) AsyncPush() (string, error) {
-	if err := n.validate(); err != nil {
-		return "", err
-	}
 	c := make(chan executionResult)
 	go n.send(c)
 	res := <-c
