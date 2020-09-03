@@ -9,14 +9,19 @@ import (
 type Notiphication struct {
 	Title         string
 	Link          string
-	Actions       []string
+	Actions       Actions
 	DropdownLabel string
 }
+
+const (
+	CLICKED = "@CONTENTCLICKED"
+	CLOSED  = "@CLOSED"
+)
 
 func (n Notiphication) buildCommand() ([]string, error) {
 	command := []string{"-message", n.Title}
 	if len(n.Actions) > 0 {
-		command = append(command, "-actions", strings.Join(n.Actions, ","))
+		command = append(command, "-actions", strings.Join(n.Actions.Keys(), ","))
 	}
 	if n.DropdownLabel != "" {
 		command = append(command, "-dropdownLabel", n.DropdownLabel)
@@ -24,17 +29,28 @@ func (n Notiphication) buildCommand() ([]string, error) {
 	return command, nil
 }
 
-func (n Notiphication) Push() (string, error) {
+func (n Notiphication) SyncPush() {
 
 	command, err := n.buildCommand()
 	if err != nil {
-		return "", err
+		log.Fatal(err)
 	}
 	cmd := exec.Command("alerter", command...)
 	response, err := cmd.Output()
 	if err != nil {
-
 		log.Fatal(err)
 	}
-	return string(response), nil
+	responseString := string(response)
+	switch responseString {
+	case CLICKED:
+		if n.Link != "" {
+			exec.Command("open", n.Link).Start()
+		}
+	case CLOSED:
+		return
+	default:
+		if action, ok := n.Actions[responseString]; ok {
+			action()
+		}
+	}
 }

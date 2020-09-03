@@ -1,14 +1,20 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/bznein/notipher/pkg/notiphication"
 )
 
 func main() {
-	notiphication := notiphication.Notiphication{}
+	notip := notiphication.Notiphication{}
 
-	notiphication.Title = "aaa"
-	notiphication.Actions = []string{"action", "action2"}
-	notiphication.DropdownLabel = "label"
-	notiphication.Push()
+	actions := notiphication.Actions{}
+	actions["action1"] = func() { fmt.Println("Clicked action1") }
+	actions["action2"] = func() { fmt.Println("Clicked action2") }
+	notip.Title = "aaa"
+	notip.Actions = actions
+	notip.Link = "http://www.google.com"
+	notip.DropdownLabel = "label"
+	notip.SyncPush()
 }
