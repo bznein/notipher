@@ -54,3 +54,7 @@ func (n Notiphication) SyncPush() {
 		}
 	}
 }
+
+func (n Notiphication) AsyncPush() {
+	go n.SyncPush()
+}
