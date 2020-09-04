@@ -20,6 +20,9 @@ func main() {
 	notip.CloseFunc = func() { fmt.Println("Close func") }
 	notip.Timeout = 100
 	notip.TimeoutFunc = func() { fmt.Println("Timeout func") }
+	notip.Sound = "Basso"
+	notip.AppIcon = "https://miro.medium.com/max/750/1*xLKFtlXiTPif_hTAIlXRjw.jpeg"
+	notip.ContentImage = "https://miro.medium.com/max/750/1*xLKFtlXiTPif_hTAIlXRjw.jpeg"
 	//notip.Reply = "Reply"
 	notip.Actions = actions
 	notip.Link = "http://www.google.com"

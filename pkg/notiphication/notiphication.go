@@ -19,6 +19,9 @@ type Notiphication struct {
 	CloseFunc     func()
 	Timeout       uint64
 	TimeoutFunc   func()
+	Sound         string
+	AppIcon       string
+	ContentImage  string
 }
 
 type executionResult struct {
@@ -64,6 +67,15 @@ func (n Notiphication) buildCommand() []string {
 	}
 	if n.Timeout != 0 {
 		command = append(command, "-timeout", strconv.FormatUint(n.Timeout, 10))
+	}
+	if n.Sound != "" {
+		command = append(command, "-sound", n.Sound)
+	}
+	if n.AppIcon != "" {
+		command = append(command, "-appIcon", n.AppIcon)
+	}
+	if n.ContentImage != "" {
+		command = append(command, "-contentImage", n.ContentImage)
 	}
 	return command
 }
