@@ -3,15 +3,22 @@ package notiphication
 import (
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
 type Notiphication struct {
 	Title         string
+	Message       string
+	Subtitle      string
 	Link          string
 	Actions       Actions
 	DropdownLabel string
 	Reply         string
+	Close         string
+	CloseFunc     func()
+	Timeout       uint64
+	TimeoutFunc   func()
 }
 
 type executionResult struct {
@@ -22,6 +29,7 @@ type executionResult struct {
 const (
 	CLICKED = "@CONTENTCLICKED"
 	CLOSED  = "@CLOSED"
+	TIMEOUT = "@TIMEOUT"
 )
 
 func (n Notiphication) validate() error {
@@ -35,7 +43,7 @@ func (n Notiphication) validate() error {
 }
 
 func (n Notiphication) buildCommand() []string {
-	command := []string{"-message", n.Title}
+	command := []string{"-message", n.Message}
 	if len(n.Actions) > 0 {
 		command = append(command, "-actions", strings.Join(n.Actions.Keys(), ","))
 	}
@@ -44,6 +52,18 @@ func (n Notiphication) buildCommand() []string {
 	}
 	if n.Reply != "" {
 		command = append(command, "-reply", n.Reply)
+	}
+	if n.Subtitle != "" {
+		command = append(command, "-subtitle", n.Subtitle)
+	}
+	if n.Title != "" {
+		command = append(command, "-title", n.Title)
+	}
+	if n.Close != "" {
+		command = append(command, "-closeLabel", n.Close)
+	}
+	if n.Timeout != 0 {
+		command = append(command, "-timeout", strconv.FormatUint(n.Timeout, 10))
 	}
 	return command
 }
@@ -73,6 +93,15 @@ func (n Notiphication) send(c chan executionResult) executionResult {
 			exec.Command("open", n.Link).Start()
 		}
 	case CLOSED:
+	case n.Close:
+		n.CloseFunc()
+		select {
+		case c <- executionResult{"", nil}:
+		default:
+			return executionResult{"", nil}
+		}
+	case TIMEOUT:
+		n.TimeoutFunc()
 		select {
 		case c <- executionResult{"", nil}:
 		default:
