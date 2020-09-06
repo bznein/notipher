@@ -80,23 +80,15 @@ func (n Notiphication) buildCommand() []string {
 	return command
 }
 
-func (n Notiphication) send(c chan executionResult) executionResult {
+func (n Notiphication) send() executionResult {
 	if err := n.validate(); err != nil {
-		select {
-		case c <- executionResult{"", err}:
-		default:
-			return executionResult{"", err}
-		}
+		return executionResult{"", err}
 	}
 	command := n.buildCommand()
 	cmd := exec.Command("alerter", command...)
 	response, err := cmd.Output()
 	if err != nil {
-		select {
-		case c <- executionResult{"", err}:
-		default:
-			return executionResult{"", err}
-		}
+		return executionResult{"", err}
 	}
 	responseString := string(response)
 	switch responseString {
@@ -107,47 +99,27 @@ func (n Notiphication) send(c chan executionResult) executionResult {
 	case CLOSED:
 	case n.Close:
 		n.CloseFunc()
-		select {
-		case c <- executionResult{"", nil}:
-		default:
-			return executionResult{"", nil}
-		}
+		return executionResult{"", nil}
 	case TIMEOUT:
 		n.TimeoutFunc()
-		select {
-		case c <- executionResult{"", nil}:
-		default:
-			return executionResult{"", nil}
-		}
+		return executionResult{"", nil}
 	default:
 		if action, ok := n.Actions[responseString]; ok {
 			action()
 		} else {
 			fmt.Println("sending")
-			select {
-			case c <- executionResult{responseString, nil}:
-			default:
-				return executionResult{responseString, nil}
-			}
+			return executionResult{responseString, nil}
 		}
-	}
-	select {
-	case c <- executionResult{"", nil}:
-	default:
 	}
 	return executionResult{"", nil}
 }
 
 func (n Notiphication) SyncPush() (string, error) {
-	c := make(chan executionResult)
-	res := n.send(c)
+	res := n.send()
 	return res.RetVal, res.Err
 
 }
 
-func (n Notiphication) AsyncPush() (string, error) {
-	c := make(chan executionResult)
-	go n.send(c)
-	res := <-c
-	return res.RetVal, res.Err
+func (n Notiphication) AsyncPush() {
+	go n.send()
 }
